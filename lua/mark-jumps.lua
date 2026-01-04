@@ -1,4 +1,4 @@
-local Snacks = require 'snacks'
+local Snacks = require("snacks")
 local marks = {}
 local keymaps = {}
 
@@ -9,10 +9,10 @@ M = {}
 ---@param mark string
 ---@return nil
 local go_to_mark = function(mark)
-  if vim.api.nvim_buf_get_name(0) ~= '' then
+  if vim.api.nvim_buf_get_name(0) ~= "" then
     vim.cmd.mkview()
   end
-  vim.api.nvim_feedkeys('`' .. mark, 'ixn', false)
+  vim.api.nvim_feedkeys("`" .. mark, "ixn", false)
   vim.cmd.loadview()
 end
 
@@ -20,7 +20,7 @@ end
 ---@param mark string?
 ---@param filename string?
 ---@return nil
-local mark_add = function(mark, filename)
+M.mark_add = function(mark, filename)
   if not mark then
     local insert_mark = { did = false, index = 0 }
 
@@ -50,12 +50,11 @@ local mark_add = function(mark, filename)
       -- Tell user to change mark
       if not insert_mark.did then
         vim.notify(
-          'Maximum number of marks reached, please choose to change a '
-            .. 'mark instead with "'
-            .. M.opts.choose_change
-            .. '" or add more marks to your configuration',
+          "Maximum number of marks reached, please choose to change a "
+            .. "mark instead with require('makr-jumps').choose_change()"
+            .. " or add more marks to your configuration",
           vim.log.levels.INFO,
-          { title = 'Too many marks' }
+          { title = "Too many marks" }
         )
 
         return nil
@@ -91,9 +90,9 @@ local mark_add = function(mark, filename)
   )
 
   -- Add the keymap
-  vim.keymap.set('n', M.opts.prefix .. mark_index, function()
+  vim.keymap.set("n", M.opts.prefix .. mark_index, function()
     go_to_mark(marks[mark_index])
-  end, { desc = 'File: ' .. filename })
+  end, { desc = "File: " .. filename })
   keymaps[#keymaps + 1] = mark_index
 end
 
@@ -103,7 +102,7 @@ local filename_array = function(mark_arr)
   local filename_arr = {}
   for _, mark in ipairs(mark_arr) do
     local markinfo = vim.api.nvim_get_mark(mark, {})
-    filename_arr[#filename_arr + 1] = mark .. ' -> ' .. markinfo[4]
+    filename_arr[#filename_arr + 1] = mark .. " -> " .. markinfo[4]
   end
 
   return filename_arr
@@ -114,7 +113,7 @@ end
 local index_all_marks = function()
   -- Clean the table and keymaps
   for _, keymap in ipairs(keymaps) do
-    vim.api.nvim_del_keymap('n', M.opts.prefix .. keymap)
+    vim.api.nvim_del_keymap("n", M.opts.prefix .. keymap)
   end
 
   marks = {}
@@ -123,8 +122,8 @@ local index_all_marks = function()
   -- Re-index
   for _, tbl in ipairs(vim.fn.getmarklist()) do
     -- Take only the A-Z marks
-    if tbl.mark:match "'[A-Z]" then
-      mark_add(tbl.mark:sub(2), tbl.file)
+    if tbl.mark:match("'[A-Z]") then
+      M.mark_add(tbl.mark:sub(2), tbl.file)
     end
   end
 end
@@ -146,19 +145,19 @@ local choose_mark = function(action, prompt)
       -- Get only the mark name
       local mark = choice:sub(1, 1)
 
-      if action == 'go' then
+      if action == "go" then
         go_to_mark(mark)
-      elseif action == 'delete' then
+      elseif action == "delete" then
         -- Remove mark from nvim
         vim.api.nvim_del_mark(mark)
 
         -- Re-index marks
         index_all_marks()
-      elseif action == 'change' then
+      elseif action == "change" then
         -- Remove this mark and then create another in the current file
         vim.api.nvim_del_mark(mark)
         index_all_marks()
-        mark_add()
+        M.mark_add()
       end
     end
   )
@@ -166,7 +165,7 @@ end
 
 ---Function to remove all marks
 ---@return nil
-local remove_marks = function()
+M.remove_marks = function()
   for _, mark in ipairs(marks) do
     vim.api.nvim_del_mark(mark)
   end
@@ -175,10 +174,10 @@ local remove_marks = function()
 end
 
 ---Remove mark from current file
-local delete_from_file = function()
+M.delete_from_file = function()
   for _, tbl in ipairs(vim.fn.getmarklist()) do
     -- Take only the A-Z marks
-    if tbl.mark:match "'[A-Z]" then
+    if tbl.mark:match("'[A-Z]") then
       if vim.fs.abspath(tbl.file) == vim.api.nvim_buf_get_name(0) then
         vim.api.nvim_buf_del_mark(0, tbl.mark:sub(2))
         break
@@ -189,59 +188,29 @@ local delete_from_file = function()
   index_all_marks()
 end
 
--- Set picker actions
+-- Define the functions use choose_mark
 
----@param opts {add_mark_file: string, choose_change: string, choose_delete: string, choose_file: string, mark_names: string[], prefix: string, remove_mark_file: string, remove_marks: string}?
+M.choose_file = function()
+  choose_mark("go", "Choose go to file")
+end
+M.choose_delete = function()
+  choose_mark("delete", "Choose delete mark")
+end
+M.choose_change = function()
+  choose_mark("delete", "Choose change mark")
+end
+
+---@param opts {mark_names: string[], prefix: string}?
 ---@return nil
 M.setup = function(opts)
   M.opts = opts or {}
 
-  M.opts.add_mark_file = M.opts.add_mark_file or '<leader>ja'
-  M.opts.choose_change = M.opts.choose_change or '<leader>jc'
-  M.opts.choose_delete = M.opts.choose_delete or '<leader>jx'
-  M.opts.choose_file = M.opts.choose_file or '<leader>js'
-  M.opts.mark_names = M.opts.mark_names or { 'A', 'B', 'C', 'D' }
-  M.opts.prefix = M.opts.prefix or '<leader>'
-  M.opts.remove_mark_file = M.opts.remove_mark_file or '<leader>jd'
-  M.opts.remove_marks = M.opts.remove_marks or '<leader>jr'
-
-  -- Set other keymaps
-
-  -- Set the "mark_add" keymap
-  vim.keymap.set('n', M.opts.add_mark_file, function()
-    mark_add()
-  end, { desc = 'Add file to marks' })
-  vim.keymap.set(
-    'n',
-    M.opts.remove_marks,
-    remove_marks,
-    { desc = 'Remove all marks' }
-  )
-  vim.keymap.set(
-    'n',
-    M.opts.remove_mark_file,
-    delete_from_file,
-    { desc = 'Remove mark from this file' }
-  )
-
-  ---General function to set picker actions
-  ---@param lhs string
-  ---@param action string
-  ---@param prompt string
-  ---@return nil
-  local picker_action = function(lhs, action, prompt)
-    vim.keymap.set('n', lhs, function()
-      choose_mark(action, prompt)
-    end, { desc = prompt })
-  end
-
-  picker_action(M.opts.choose_file, 'go', 'Choose go to file')
-  picker_action(M.opts.choose_delete, 'delete', 'Choose delete mark')
-  picker_action(M.opts.choose_change, 'change', 'Choose change mark')
+  M.opts.mark_names = M.opts.mark_names or { "A", "B", "C", "D" }
+  M.opts.prefix = M.opts.prefix or "<leader>"
 
   -- Run the mark indexing once vim has loaded
-  vim.api.nvim_create_autocmd('VimEnter', {
-    group = vim.api.nvim_create_augroup('Marks indexing', { clear = true }),
+  vim.api.nvim_create_autocmd("VimEnter", {
+    group = vim.api.nvim_create_augroup("Marks indexing", { clear = true }),
     callback = function()
       index_all_marks()
     end,

@@ -4,8 +4,11 @@
 Table of Contents                          *mark-jumps.nvim-table-of-contents*
 
 Description .................................... |mark-jumps.nvim-description|
+Usage ................................................ |mark-jumps.nvim-usage|
 Dependencies .................................. |mark-jumps.nvim-dependencies|
 Installation .................................. |mark-jumps.nvim-installation|
+Defalt options .............................. |mark-jumps.nvim-defalt-options|
+Example keymaps ............................ |mark-jumps.nvim-example-keymaps|
 Inspiration .................................... |mark-jumps.nvim-inspiration|
 TODO .................................................. |mark-jumps.nvim-todo|
 
@@ -18,8 +21,28 @@ MARK-JUMPS.NVIM                              *mark-jumps.nvim-mark-jumps.nvim*
 DESCRIPTION                                      *mark-jumps.nvim-description*
 
 
-Small plugin that makes it easy to place and go to marks accross your files
+Small plugin that makes it easy to place and go to marks accross your files.
 
+
+------------------------------------------------------------------------------
+USAGE                                                  *mark-jumps.nvim-usage*
+
+
+Place a mark in the current buffer with
+
+>lua
+    require('mark-jumps').mark_add()
+<
+Navigate away and return to the file exactly where you left off with
+`<prefix>1` without having to nagivate the jump-list with `<C-O>`, where
+`<prefix>` is set up in the Configuration <#configuration> below. Place as
+many marks as `mark_names` are set-up and nagivate to them with `<prefix>N`
+where `N` is the place of the mark in the list. Alternatively, open a picker
+with
+
+>lua
+    require('mark-jumps').choose_file()
+<
 
 ------------------------------------------------------------------------------
 DEPENDENCIES                                    *mark-jumps.nvim-dependencies*
@@ -37,29 +60,73 @@ Install it like any other plugin. For example, if using `LazyVim` as your
 package manager:
 
 >lua
-      {
-        'AndresYague/mark-jumps.nvim',
-        opts = {},
-      }
-<
-The default options are
-
->lua
-      opts = {
-        add_mark_file = '<leader>ja' -- How to add a mark to the current file
-        choose_change = '<leader>jc' -- Add a mark to this file by removing another
-        choose_delete = '<leader>jx' -- Choose a mark to delete
-        choose_file = '<leader>js' -- Picker to choose which file to go to
-        mark_names = { 'A', 'B', 'C', 'D' } -- Which marks can the plugin use
-        prefix = '<leader>' -- Prefix for file jump
-        remove_mark_file = '<leader>jd' -- Delete the mark from this file
-        remove_marks = '<leader>jr' -- Remove all marks
-      }
+    {
+      'AndresYague/mark-jumps.nvim',
+      opts = {},
+    }
 <
 It can also be initialized through a `setup` call:
 
 >lua
-      require('mark-jumps').setup(opts)
+    require('mark-jumps').setup(opts)
+<
+<a name="configuration">## Configuration</a>
+
+
+                                                                              
+DEFALT OPTIONS                                *mark-jumps.nvim-defalt-options*
+
+The default options are
+
+>lua
+    opts = {
+      mark_names = { 'A', 'B', 'C', 'D' } -- Which marks can the plugin use
+      prefix = '<leader>' -- Prefix for file jump, <prefix>N goes to the Nth marked file
+    }
+<
+
+                                                                              
+EXAMPLE KEYMAPS                              *mark-jumps.nvim-example-keymaps*
+
+These example keymaps set-up the full api
+
+>lua
+    vim.keymap.set(
+      'n',
+      '<leader>ja',
+      require('mark-jumps').mark_add,
+      { desc = 'Add file to marks' }
+    )
+    vim.keymap.set(
+      'n',
+      '<leader>jr',
+      require('mark-jumps').remove_marks,
+      { desc = 'Remove all marks' }
+    )
+    vim.keymap.set(
+      'n',
+      '<leader>jd',
+      require('mark-jumps').delete_from_file,
+      { desc = 'Remove mark from this file' }
+    )
+    vim.keymap.set(
+      'n',
+      '<leader>js',
+      require('mark-jumps').choose_file,
+      { desc = 'Choose go to file' }
+    )
+    vim.keymap.set(
+      'n',
+      '<leader>jx',
+      require('mark-jumps').choose_delete,
+      { desc = 'Choose delete mark' }
+    )
+    vim.keymap.set(
+      'n',
+      '<leader>jc',
+      require('mark-jumps').choose_change,
+      { desc = 'Choose change mark' }
+    )
 <
 
 ------------------------------------------------------------------------------
@@ -75,7 +142,6 @@ TODO                                                    *mark-jumps.nvim-todo*
 
 
 - Keep track of marks per project
-- Allow more mapping flexibility
 - Remove snacks dependency
 
 vim:tw=78:ts=8:ft=help:norl:
