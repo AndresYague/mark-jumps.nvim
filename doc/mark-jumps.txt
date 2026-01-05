@@ -21,7 +21,9 @@ MARK-JUMPS.NVIM                              *mark-jumps.nvim-mark-jumps.nvim*
 DESCRIPTION                                      *mark-jumps.nvim-description*
 
 
-Small plugin that makes it easy to place and go to marks accross your files.
+Small-sized plugin that makes it easy to place and go to marks accross your
+files. Although it uses vim's global marks (i.e. they work across files), it
+tries to segregate the marks by project.
 
 
 ------------------------------------------------------------------------------
@@ -141,7 +143,6 @@ This plugin is inspired by harpoon
 TODO                                                    *mark-jumps.nvim-todo*
 
 
-- Keep track of marks per project
 - Remove snacks dependency
 
 vim:tw=78:ts=8:ft=help:norl:

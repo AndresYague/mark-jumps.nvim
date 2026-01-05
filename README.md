@@ -2,7 +2,9 @@
 
 ## Description
 
-Small plugin that makes it easy to place and go to marks accross your files.
+Small-sized plugin that makes it easy to place and go to marks accross your
+files. Although it uses vim's global marks (i.e. they work across files), it
+tries to segregate the marks by project.
 
 ## Usage
 
@@ -14,7 +16,10 @@ require('mark-jumps').mark_add()
 
 Navigate away and return to the file exactly where you left off with
 `<prefix>1` without having to nagivate the jump-list with `<C-O>`, where
-`<prefix>` is set up in the [Configuration](#configuration) below. Place as many marks as `mark_names` are set-up and nagivate to them with `<prefix>N` where `N` is the place of the mark in the list. Alternatively, open a picker with
+`<prefix>` is set up in the [Configuration](#configuration) below. Place as
+many marks as `mark_names` are set-up and nagivate to them with `<prefix>N`
+where `N` is the place of the mark in the list. Alternatively, open a picker
+with
 
 ```lua
 require('mark-jumps').choose_file()
@@ -26,7 +31,8 @@ This plugin currently depends on [snacks.picker](https://github.com/folke/snacks
 
 ## Installation
 
-Install it like any other plugin. For example, if using `LazyVim` as your package manager:
+Install it like any other plugin. For example, if using `LazyVim` as your
+package manager:
 
 
 ```lua
@@ -104,5 +110,4 @@ This plugin is inspired by [harpoon](https://github.com/ThePrimeagen/harpoon/tre
 
 ## TODO
 
-- Keep track of marks per project
 - Remove snacks dependency
