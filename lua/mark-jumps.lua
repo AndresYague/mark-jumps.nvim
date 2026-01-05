@@ -3,7 +3,14 @@ local marks = {}
 local keymaps = {}
 
 -- What project are we on?
-local root = vim.fs.root(0, ".git")
+local root = vim.fs.root(0, {
+  ".git",
+  ".helix",
+  ".project",
+  "package.json",
+  "pom.xml",
+  "pyproject.toml",
+})
 
 M = {}
 
@@ -16,7 +23,7 @@ local go_to_mark = function(mark)
     vim.cmd.mkview()
   end
   vim.api.nvim_feedkeys("`" .. mark, "ixn", false)
-  vim.cmd.loadview()
+  pcall(vim.cmd.loadview())
 end
 
 ---Add a given mark to the list or create a new one in the current position
@@ -30,7 +37,10 @@ M.mark_add = function(mark, filename)
     -- Do not add more than one mark per file
     local bufname = vim.api.nvim_buf_get_name(0)
     for _, mrk in ipairs(marks) do
-      if bufname == vim.fs.abspath(vim.api.nvim_get_mark(mrk, {})[4]) then
+      if
+        bufname
+        == vim.fs.abspath(vim.fs.normalize(vim.api.nvim_get_mark(mrk, {})[4]))
+      then
         return nil
       end
     end
@@ -127,8 +137,15 @@ local index_all_marks = function()
     -- Take only the A-Z marks
     if tbl.mark:match("'[A-Z]") then
       -- Filter by project as well
-      local absfile = vim.fs.abspath(tbl.file)
-      if root and absfile:sub(1, root:len()) ~= root then
+
+      -- Check if tbl.file is a substring of root
+      if
+        root
+        and (
+          vim.fs.abspath(vim.fs.normalize(tbl.file)):sub(1, root:len())
+          ~= root
+        )
+      then
         goto continue
       end
 
@@ -188,7 +205,10 @@ M.delete_from_file = function()
   for _, tbl in ipairs(vim.fn.getmarklist()) do
     -- Take only the A-Z marks
     if tbl.mark:match("'[A-Z]") then
-      if vim.fs.abspath(tbl.file) == vim.api.nvim_buf_get_name(0) then
+      if
+        vim.fs.abspath(vim.fs.normalize(tbl.file))
+        == vim.api.nvim_buf_get_name(0)
+      then
         vim.api.nvim_buf_del_mark(0, tbl.mark:sub(2))
         break
       end
