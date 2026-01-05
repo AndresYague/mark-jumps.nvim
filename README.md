@@ -48,7 +48,7 @@ It can also be initialized through a `setup` call:
 require('mark-jumps').setup(opts)
 ```
 
-<a name="configuration">## Configuration</a>
+## Configuration
 
 ### Defalt options
 

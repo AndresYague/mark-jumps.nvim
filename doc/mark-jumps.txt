@@ -7,6 +7,7 @@ Description .................................... |mark-jumps.nvim-description|
 Usage ................................................ |mark-jumps.nvim-usage|
 Dependencies .................................. |mark-jumps.nvim-dependencies|
 Installation .................................. |mark-jumps.nvim-installation|
+Configuration ................................ |mark-jumps.nvim-configuration|
 Defalt options .............................. |mark-jumps.nvim-defalt-options|
 Example keymaps ............................ |mark-jumps.nvim-example-keymaps|
 Inspiration .................................... |mark-jumps.nvim-inspiration|
@@ -72,7 +73,12 @@ It can also be initialized through a `setup` call:
 >lua
     require('mark-jumps').setup(opts)
 <
-<a name="configuration">## Configuration</a>
+<a name="configuration"></a>
+
+
+------------------------------------------------------------------------------
+CONFIGURATION                                  *mark-jumps.nvim-configuration*
+
 
 
                                                                               
