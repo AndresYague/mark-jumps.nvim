@@ -14,16 +14,15 @@ local root = vim.fs.root(0, {
 
 -- Create the cache directory
 local cache_dir = vim.fs.joinpath(vim.fn.stdpath("cache"), "mark-jumps")
+vim.fn.mkdir(cache_dir, "p")
 
+-- Get the filename for the cache
 local cache_file
 if root then
   cache_file = vim.fs.joinpath(cache_dir, root:gsub("%/", "%%") .. ".cache")
 else
   cache_file = vim.fs.joinpath(cache_dir, "_general_.cache")
 end
-
-vim.fn.mkdir(cache_dir, "p")
-vim.print(cache_file) -- TODO: remove
 
 M = {}
 
@@ -39,87 +38,115 @@ local go_to_mark = function(mark)
   pcall(vim.cmd.loadview())
 end
 
----Add a given mark to the list or create a new one in the current position
+---Add a filename to the cache_file
 ---@param mark string?
 ---@param filename string?
 ---@return nil
 M.mark_add = function(mark, filename)
-  if not mark then
-    local insert_mark = { did = false, index = 0 }
-
-    -- Do not add more than one mark per file
-    local bufname = vim.api.nvim_buf_get_name(0)
-    for _, mrk in ipairs(marks) do
-      if
-        bufname
-        == vim.fs.abspath(vim.fs.normalize(vim.api.nvim_get_mark(mrk, {})[4]))
-      then
-        return nil
-      end
-    end
-
-    -- Add the mark to the list
-    if #marks == 0 then
-      marks = { M.opts.mark_names[1] }
-      insert_mark.did = true
-      insert_mark.index = #marks
-    else
-      for idx, mark_name in ipairs(M.opts.mark_names) do
-        if marks[idx] ~= mark_name then
-          table.insert(marks, idx, mark_name)
-          insert_mark.did = true
-          insert_mark.index = idx
-          break
-        end
-      end
-
-      -- Tell user to change mark
-      if not insert_mark.did then
-        vim.notify(
-          "Maximum number of marks reached, please choose to change a "
-            .. "mark instead with require('makr-jumps').choose_change()"
-            .. " or add more marks to your configuration",
-          vim.log.levels.INFO,
-          { title = "Too many marks" }
-        )
-
-        return nil
-      end
-    end
-
-    -- Add the mark to the file
-    local cursor = vim.api.nvim_win_get_cursor(0)
-    vim.api.nvim_buf_set_mark(
-      0,
-      marks[insert_mark.index],
-      cursor[1],
-      cursor[2],
-      {}
-    )
-  else
-    marks[#marks + 1] = mark
-  end
-
-  -- Save the current size of marks to avoid
-  -- capturing the dynamic #marks
-  local mark_index = #marks
-
-  -- Get filename for mark
+  -- Get current filename
   if not filename then
     filename = vim.api.nvim_buf_get_name(0)
+  else
+    filename = vim.fs.abspath(filename)
   end
 
-  -- Shorten filename
-  filename = vim.fs.joinpath(
-    vim.fs.basename(vim.fs.dirname(filename)),
-    vim.fs.basename(filename)
-  )
+  -- Figure out if file already in cache_file, in that case we can just exit
+  local file_read = io.open(cache_file, "r")
+  if file_read then
+    for line in file_read:lines() do
+      vim.print(line)
+      if line == filename then
+        vim.print(line, "Exiting function")
+        return nil
+      end
+    end
+  end
 
-  -- Add the keymap
-  vim.keymap.set("n", M.opts.prefix .. mark_index, function()
-    go_to_mark(marks[mark_index])
-  end, { desc = "File: " .. filename })
-  keymaps[#keymaps + 1] = mark_index
+  -- Write to cache_file
+  local file_write = io.open(cache_file, "a+")
+  if file_write then
+    file_write:write(filename .. "\n")
+    file_write:close()
+  else
+    vim.print("could not open")
+  end
+
+  -- if not mark then
+  --   local insert_mark = { did = false, index = 0 }
+  --
+  --   -- Do not add more than one mark per file
+  --   local bufname = vim.api.nvim_buf_get_name(0)
+  --   for _, mrk in ipairs(marks) do
+  --     if
+  --       bufname
+  --       == vim.fs.abspath(vim.fs.normalize(vim.api.nvim_get_mark(mrk, {})[4]))
+  --     then
+  --       return nil
+  --     end
+  --   end
+  --
+  --   -- Add the mark to the list
+  --   if #marks == 0 then
+  --     marks = { M.opts.mark_names[1] }
+  --     insert_mark.did = true
+  --     insert_mark.index = #marks
+  --   else
+  --     for idx, mark_name in ipairs(M.opts.mark_names) do
+  --       if marks[idx] ~= mark_name then
+  --         table.insert(marks, idx, mark_name)
+  --         insert_mark.did = true
+  --         insert_mark.index = idx
+  --         break
+  --       end
+  --     end
+  --
+  --     -- Tell user to change mark
+  --     if not insert_mark.did then
+  --       vim.notify(
+  --         "Maximum number of marks reached, please choose to change a "
+  --           .. "mark instead with require('makr-jumps').choose_change()"
+  --           .. " or add more marks to your configuration",
+  --         vim.log.levels.INFO,
+  --         { title = "Too many marks" }
+  --       )
+  --
+  --       return nil
+  --     end
+  --   end
+  --
+  --   -- Add the mark to the file
+  --   local cursor = vim.api.nvim_win_get_cursor(0)
+  --   vim.api.nvim_buf_set_mark(
+  --     0,
+  --     marks[insert_mark.index],
+  --     cursor[1],
+  --     cursor[2],
+  --     {}
+  --   )
+  -- else
+  --   marks[#marks + 1] = mark
+  -- end
+  --
+  -- -- Save the current size of marks to avoid
+  -- -- capturing the dynamic #marks
+  -- local mark_index = #marks
+  --
+  -- -- Get filename for mark
+  -- if not filename then
+  --   filename = vim.api.nvim_buf_get_name(0)
+  -- end
+  --
+  -- -- Shorten filename
+  -- filename = vim.fs.joinpath(
+  --   vim.fs.basename(vim.fs.dirname(filename)),
+  --   vim.fs.basename(filename)
+  -- )
+  --
+  -- -- Add the keymap
+  -- vim.keymap.set("n", M.opts.prefix .. mark_index, function()
+  --   go_to_mark(marks[mark_index])
+  -- end, { desc = "File: " .. filename })
+  -- keymaps[#keymaps + 1] = mark_index
 end
 
 ---@param mark_arr string[]
