@@ -81,7 +81,7 @@ vim.keymap.set(
 vim.keymap.set(
   'n',
   '<leader>jd',
-  require('mark-jumps').delete_from_file,
+  require('mark-jumps').remove_filename,
   { desc = 'Remove mark from this file' }
 )
 vim.keymap.set(

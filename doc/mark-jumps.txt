@@ -73,8 +73,6 @@ It can also be initialized through a `setup` call:
 >lua
     require('mark-jumps').setup(opts)
 <
-<a name="configuration"></a>
-
 
 ------------------------------------------------------------------------------
 CONFIGURATION                                  *mark-jumps.nvim-configuration*
@@ -114,7 +112,7 @@ These example keymaps set-up the full api
     vim.keymap.set(
       'n',
       '<leader>jd',
-      require('mark-jumps').delete_from_file,
+      require('mark-jumps').remove_filename,
       { desc = 'Remove mark from this file' }
     )
     vim.keymap.set(
