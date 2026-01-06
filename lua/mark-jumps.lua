@@ -27,7 +27,7 @@ end
 M = {}
 
 ---Normalize the filename. If "filename" is not provided,
----take the urrent buffer
+---take the current buffer
 ---@param filename string?
 ---@return string
 local normalize_fname = function(filename)
@@ -37,18 +37,6 @@ local normalize_fname = function(filename)
   end
 
   return vim.fs.normalize(vim.fs.abspath(filename))
-end
-
----Go to a mark saving the view before leaving and restoring it
----after arriving
----@param mark string
----@return nil
-local go_to_mark = function(mark)
-  if vim.api.nvim_buf_get_name(0) ~= "" then
-    vim.cmd.mkview()
-  end
-  vim.api.nvim_feedkeys("`" .. mark, "ixn", false)
-  pcall(vim.cmd.loadview())
 end
 
 ---Clean and re-create all the keymaps
@@ -72,21 +60,29 @@ M.mark_add = function(filename)
   -- Normalize current filename
   filename = normalize_fname(filename)
 
+  -- Check if filename is already in array
+  local already_there = false
+  for _, fname in ipairs(filenames) do
+    if fname == filename then
+      already_there = true
+      break
+    end
+  end
+
+  if not already_there then
+    table.insert(filenames, filename)
+  end
+
   -- Shorten filename
   filename = vim.fs.joinpath(
     vim.fs.basename(vim.fs.dirname(filename)),
     vim.fs.basename(filename)
   )
 
-  -- Insert filename into table
-  table.insert(filenames, filename)
-  -- vim.print(filenames)
-
   -- Add the keymap
   local fname_index = #filenames
   vim.keymap.set("n", M.opts.prefix .. fname_index, function()
     vim.cmd.edit(filenames[fname_index])
-    -- go_to_mark(marks[fname_index])
   end, { desc = "File: " .. filename })
   keymaps[#keymaps + 1] = fname_index
 end
@@ -183,8 +179,6 @@ M.setup = function(opts)
   vim.api.nvim_create_autocmd("VimLeave", {
     group = vim.api.nvim_create_augroup("Files saving", { clear = true }),
     callback = function()
-      -- TODO: Make autocommand to write to cache file
-      -- Write to cache_file
       local file_write = io.open(cache_file, "w+")
       if file_write then
         for _, fname in ipairs(filenames) do
