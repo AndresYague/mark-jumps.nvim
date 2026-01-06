@@ -78,6 +78,10 @@ M.mark_add = function(filename)
     vim.fs.basename(filename)
   )
 
+  -- Insert filename into table
+  table.insert(filenames, filename)
+  -- vim.print(filenames)
+
   -- Add the keymap
   local fname_index = #filenames
   vim.keymap.set("n", M.opts.prefix .. fname_index, function()
@@ -108,13 +112,8 @@ local index_all_marks = function()
   local file_read = io.open(cache_file, "r")
   if file_read then
     for line in file_read:lines() do
-      table.insert(filenames, line)
+      M.mark_add(line)
     end
-  end
-
-  -- Create the new keymaps
-  for _, filename in ipairs(filenames) do
-    M.mark_add(filename)
   end
 end
 
