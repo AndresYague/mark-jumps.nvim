@@ -57,6 +57,7 @@ local re_index = function()
   for _, keymap in ipairs(keymaps) do
     vim.api.nvim_del_keymap("n", M.opts.prefix .. keymap)
   end
+  keymaps = {}
 
   -- Now create them again
   for _, fname in ipairs(filenames) do
@@ -110,6 +111,7 @@ M.remove_filename = function(filename)
       break
     end
   end
+  vim.print(filenames) -- TODO: Remove
 
   re_index()
 end
