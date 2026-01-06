@@ -12,17 +12,6 @@ local root = vim.fs.root(0, {
   "pyproject.toml",
 })
 
----Open a filename, loading the view
----@param filename string?
----@return nil
-local edit_file = function(filename)
-  if vim.api.nvim_buf_get_name(0) ~= "" then
-    vim.cmd.mkview()
-  end
-  vim.cmd.edit(filename)
-  pcall(vim.cmd.loadview())
-end
-
 -- Create the cache directory
 local cache_dir = vim.fs.joinpath(vim.fn.stdpath("cache"), "mark-jumps")
 vim.fn.mkdir(cache_dir, "p")
@@ -36,6 +25,17 @@ else
 end
 
 M = {}
+
+---Open a filename, loading the view
+---@param filename string?
+---@return nil
+local edit_file = function(filename)
+  if vim.api.nvim_buf_get_name(0) ~= "" then
+    vim.cmd.mkview()
+  end
+  vim.cmd.edit(filename)
+  pcall(vim.cmd.loadview())
+end
 
 ---Normalize the filename. If "filename" is not provided,
 ---take the current buffer
@@ -52,7 +52,7 @@ end
 
 ---Clean and re-create all the keymaps
 ---@return nil
-local re_index = function()
+local re_index_keymaps = function()
   -- Clean the keymaps
   for _, keymap in ipairs(keymaps) do
     vim.api.nvim_del_keymap("n", M.opts.prefix .. keymap)
@@ -60,30 +60,30 @@ local re_index = function()
   keymaps = {}
 
   -- Now create them again
-  for _, fname in ipairs(filenames) do
-    M.mark_add(fname)
+  for idx, fname in ipairs(filenames) do
+    -- Add the keymaps
+    vim.keymap.set("n", M.opts.prefix .. idx, function()
+      edit_file(fname)
+    end, { desc = "File: " .. fname })
+    table.insert(keymaps, idx)
   end
 end
 
 ---Add a keymap for the filename
 ---@param filename string?
 ---@return nil
-M.mark_add = function(filename)
+M.add_filename = function(filename)
   -- Normalize current filename
   filename = normalize_fname(filename)
 
   -- Check if filename is already in array
-  local already_there = false
   for _, fname in ipairs(filenames) do
     if fname == filename then
-      already_there = true
-      break
+      return
     end
   end
 
-  if not already_there then
-    table.insert(filenames, filename)
-  end
+  table.insert(filenames, filename)
 
   -- Shorten filename
   filename = vim.fs.joinpath(
@@ -100,8 +100,13 @@ M.mark_add = function(filename)
 end
 
 ---@param filename string?
+---@param do_re_index boolean?
 ---@return nil
-M.remove_filename = function(filename)
+M.remove_filename = function(filename, do_re_index)
+  if do_re_index == nil then
+    do_re_index = true
+  end
+
   -- Normalize current filename
   filename = normalize_fname(filename)
 
@@ -111,28 +116,17 @@ M.remove_filename = function(filename)
       break
     end
   end
-  vim.print(filenames) -- TODO: Remove
 
-  re_index()
-end
-
----Index all existing marks so they are not overwritten
----@return nil
-local index_all_marks = function()
-  -- Read the cached file and save to filenames
-  local file_read = io.open(cache_file, "r")
-  if file_read then
-    for line in file_read:lines() do
-      M.mark_add(line)
-    end
+  if do_re_index then
+    re_index_keymaps()
   end
 end
 
----Perform an action on a chosen mark
+---Perform an action on a chosen filename
 ---@param action string
 ---@param prompt string
 ---@return nil
-local choose_mark = function(action, prompt)
+local file_action = function(action, prompt)
   Snacks.picker.select(filenames, { prompt = prompt }, function(filename)
     -- User canceled
     if not filename then
@@ -142,37 +136,35 @@ local choose_mark = function(action, prompt)
     if action == "go" then
       edit_file(filename)
     elseif action == "delete" then
-      -- Remove mark from nvim
+      -- Remove filename
       M.remove_filename(filename)
-      re_index()
     elseif action == "change" then
-      -- Remove this mark and then create another in the current file
+      -- Remove this filename and add the current file
       M.remove_filename(filename)
-      re_index()
-      M.mark_add()
+      M.add_filename()
     end
   end)
 end
 
----Function to remove all marks
+---Function to remove all filenames
 ---@return nil
-M.remove_marks = function()
+M.remove_all = function()
   for _, fname in ipairs(filenames) do
-    M.remove_filename(fname)
+    M.remove_filename(fname, false)
   end
-  re_index()
+  re_index_keymaps()
 end
 
--- Define the functions use choose_mark
+-- Define the functions use file_action
 
 M.choose_file = function()
-  choose_mark("go", "Choose go to file")
+  file_action("go", "Choose go to file")
 end
 M.choose_delete = function()
-  choose_mark("delete", "Choose delete mark")
+  file_action("delete", "Choose delete filename")
 end
 M.choose_change = function()
-  choose_mark("delete", "Choose change mark")
+  file_action("delete", "Choose change filename")
 end
 
 ---@param opts {prefix: string}?
@@ -181,16 +173,15 @@ M.setup = function(opts)
   M.opts = opts or {}
   M.opts.prefix = M.opts.prefix or "<leader>"
 
-  -- Run the mark indexing once vim has loaded
-  vim.api.nvim_create_autocmd("VimEnter", {
-    group = vim.api.nvim_create_augroup("Files indexing", { clear = true }),
-    callback = function()
-      index_all_marks()
-    end,
-    once = true,
-  })
+  -- Read the cache file to the filenames
+  local file_read = io.open(cache_file, "r")
+  if file_read then
+    for line in file_read:lines() do
+      M.add_filename(line)
+    end
+  end
 
-  -- Run the mark indexing once we leave vim
+  -- Save the filenames to the cache file when leaving nvim
   vim.api.nvim_create_autocmd("VimLeave", {
     group = vim.api.nvim_create_augroup("Files saving", { clear = true }),
     callback = function()
