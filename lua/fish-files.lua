@@ -1,6 +1,9 @@
 local Snacks = require("snacks")
+local edit_cache = require("utils").edit_cache
 local keymaps = 0
-local filenames = {}
+
+---@type string[]
+local filename_list = {}
 
 -- What project are we on?
 local root = vim.fs.root(0, {
@@ -82,7 +85,7 @@ local re_index_keymaps = function()
   keymaps = 0
 
   -- Now create them again
-  for _, fname in ipairs(filenames) do
+  for _, fname in ipairs(filename_list) do
     add_keymap(fname)
   end
 end
@@ -95,14 +98,14 @@ M.add_hook = function(filename)
   filename = normalize_fname(filename)
 
   -- Check if filename is already in array
-  for _, fname in ipairs(filenames) do
+  for _, fname in ipairs(filename_list) do
     if fname == filename then
       return
     end
   end
 
   -- Add filename and keymap
-  filenames[#filenames+1] = filename
+  filename_list[#filename_list + 1] = filename
   add_keymap(filename)
 end
 
@@ -117,9 +120,9 @@ M.remove_hook = function(filename, do_re_index)
   -- Normalize current filename
   filename = normalize_fname(filename)
 
-  for idx, fname in ipairs(filenames) do
+  for idx, fname in ipairs(filename_list) do
     if fname == filename then
-      table.remove(filenames, idx)
+      table.remove(filename_list, idx)
       break
     end
   end
@@ -135,7 +138,7 @@ end
 ---@return nil
 local file_action = function(action, prompt)
   local short_fnames = {}
-  for idx, fname in ipairs(filenames) do
+  for idx, fname in ipairs(filename_list) do
     short_fnames[idx] = shorten_filename(fname)
   end
   Snacks.picker.select(short_fnames, { prompt = prompt }, function(filename)
@@ -156,19 +159,64 @@ end
 ---Function to remove all filenames
 ---@return nil
 M.unhook_all_files = function()
-  for _, fname in ipairs(filenames) do
+  for _, fname in ipairs(filename_list) do
     M.remove_hook(fname, false)
   end
   re_index_keymaps()
 end
 
--- Define the functions use file_action
+-- Define the functions that use file_action
 
 M.choose_reel_file = function()
   file_action("go", "Choose file to reel")
 end
 M.choose_remove_hook = function()
   file_action("delete", "Choose file to unhook")
+end
+
+-- Cache utility functions
+
+---Write files to cache
+---@return nil
+local write_to_cache = function()
+  local file_write = io.open(cache_file, "w+")
+  if file_write then
+    for _, fname in ipairs(filename_list) do
+      file_write:write(fname .. "\n")
+    end
+    file_write:close()
+  else
+    vim.notify("fish-files: could not cache file", vim.log.levels.INFO)
+  end
+end
+
+---Read cache file
+---@return nil
+local read_cache = function()
+  -- In case we have some files in memory, unload them
+  filename_list = {}
+  re_index_keymaps()
+
+  local file_read = io.open(cache_file, "r")
+  if file_read then
+    for line in file_read:lines() do
+      M.add_hook(line)
+    end
+  end
+end
+
+M.manage_hooks = function()
+  -- Write to the cache file
+  write_to_cache()
+
+  -- Make the filepath openable by vim
+  local openable_cache = cache_file:gsub("%%", "%\\%%")
+
+  -- Open the cache file to edit
+  edit_cache(openable_cache)
+
+  -- The autocmd below makes sure we get the information after editing the
+  -- cache
 end
 
 ---@param opts {prefix: string}?
@@ -178,27 +226,21 @@ M.setup = function(opts)
   M.opts.prefix = M.opts.prefix or "<leader>"
 
   -- Read the cache file to the filenames
-  local file_read = io.open(cache_file, "r")
-  if file_read then
-    for line in file_read:lines() do
-      M.add_hook(line)
-    end
-  end
+  read_cache()
+
+  local fish_group = vim.api.nvim_create_augroup("Fish-files", {clear = true})
+
+  -- When the cache is changed, read it
+  vim.api.nvim_create_autocmd("BufWinLeave", {
+    pattern = cache_file,
+    group = fish_group,
+    callback = read_cache,
+  })
 
   -- Save the filenames to the cache file when leaving nvim
-  vim.api.nvim_create_autocmd("VimLeave", {
-    group = vim.api.nvim_create_augroup("Files saving", { clear = true }),
-    callback = function()
-      local file_write = io.open(cache_file, "w+")
-      if file_write then
-        for _, fname in ipairs(filenames) do
-          file_write:write(fname .. "\n")
-        end
-        file_write:close()
-      else
-        vim.notify("fish-files: could not cache file", vim.log.levels.INFO)
-      end
-    end,
+  vim.api.nvim_create_autocmd({ "VimLeave" }, {
+    group = fish_group,
+    callback = write_to_cache,
     once = true,
   })
 end
