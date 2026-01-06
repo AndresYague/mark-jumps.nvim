@@ -110,6 +110,8 @@ M.remove_filename = function(filename)
       break
     end
   end
+
+  re_index()
 end
 
 ---Index all existing marks so they are not overwritten
