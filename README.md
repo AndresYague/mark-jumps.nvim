@@ -2,32 +2,33 @@
 
 ## Description
 
-Small-sized plugin that makes it easy to place and go to marks accross your
-files. Although it uses vim's global marks (i.e. they work across files), it
-tries to segregate the marks by project.
+Small-sized plugin that makes it easy to mark and retrieve your files in a
+project. Inspired by [harpoon](#inspiration), but smaller, so instead of harpooning the files
+we hook them so we can reel them.
 
 ## Usage
 
-Place a mark in the current buffer with
+Hook the file in the current buffer with
 
 ```lua
-require('mark-jumps').mark_add()
+require('fish-files').add_hook()
 ```
 
 Navigate away and return to the file exactly where you left off with
 `<prefix>1` without having to nagivate the jump-list with `<C-O>`, where
-`<prefix>` is set up in the [Configuration](#configuration) below. Place as
-many marks as `mark_names` are set-up and nagivate to them with `<prefix>N`
-where `N` is the place of the mark in the list. Alternatively, open a picker
+`<prefix>` is set up in the [Configuration](#configuration) below. Keep
+hooking files and nagivate to them with `<prefix>N` where `N` is given in
+the chronological order that the file was hooked. Alternatively, open a picker
 with
 
 ```lua
-require('mark-jumps').choose_file()
+require('fish-files').choose_reel_file()
 ```
 
 ## Dependencies
 
-This plugin currently depends on [snacks.picker](https://github.com/folke/snacks.nvim)
+- Neovim > 0.10.0 (probably)
+- Currently depends on [snacks.picker](https://github.com/folke/snacks.nvim) for the picker
 
 ## Installation
 
@@ -37,7 +38,7 @@ package manager:
 
 ```lua
 {
-  'AndresYague/mark-jumps.nvim',
+  'AndresYague/fish-files.nvim',
   opts = {},
 }
 ```
@@ -45,7 +46,7 @@ package manager:
 It can also be initialized through a `setup` call:
 
 ```lua
-require('mark-jumps').setup(opts)
+require('fish-files').setup(opts)
 ```
 
 ## Configuration
@@ -56,7 +57,6 @@ The default options are
 
 ```lua
 opts = {
-  mark_names = { 'A', 'B', 'C', 'D' } -- Which marks can the plugin use
   prefix = '<leader>' -- Prefix for file jump, <prefix>N goes to the Nth marked file
 }
 ```
@@ -69,38 +69,32 @@ These example keymaps set-up the full api
 vim.keymap.set(
   'n',
   '<leader>ja',
-  require('mark-jumps').mark_add,
-  { desc = 'Add file to marks' }
+  require('fish-files').add_hook,
+  { desc = 'Hook file' }
 )
 vim.keymap.set(
   'n',
   '<leader>jr',
-  require('mark-jumps').remove_marks,
-  { desc = 'Remove all marks' }
+  require('fish-files').unhook_all_files,
+  { desc = 'Unhook all files' }
 )
 vim.keymap.set(
   'n',
   '<leader>jd',
-  require('mark-jumps').remove_filename,
-  { desc = 'Remove mark from this file' }
+  require('fish-files').remove_hook,
+  { desc = 'Unhook this file' }
 )
 vim.keymap.set(
   'n',
   '<leader>js',
-  require('mark-jumps').choose_file,
-  { desc = 'Choose go to file' }
+  require('fish-files').choose_reel_file,
+  { desc = 'Choose file to reel' }
 )
 vim.keymap.set(
   'n',
   '<leader>jx',
-  require('mark-jumps').choose_delete,
-  { desc = 'Choose delete mark' }
-)
-vim.keymap.set(
-  'n',
-  '<leader>jc',
-  require('mark-jumps').choose_change,
-  { desc = 'Choose change mark' }
+  require('fish-files').choose_remove_hook,
+  { desc = 'Choose file to unhook' }
 )
 ```
 
