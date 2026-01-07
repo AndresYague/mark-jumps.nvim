@@ -29,6 +29,7 @@ require('fish-files').choose_reel_file()
 
 - Neovim > 0.10.0 (probably)
 - Currently depends on [snacks.picker](https://github.com/folke/snacks.nvim) for the picker
+- [which-key](#https://github.com/folke/which-key.nvim) is not needed but it is recommended.
 
 ## Installation
 
@@ -96,7 +97,19 @@ vim.keymap.set(
   require('fish-files').choose_remove_hook,
   { desc = 'Choose file to unhook' }
 )
+vim.keymap.set(
+  'n',
+  '<leader>jm',
+  require('fish-files').manage_hooks,
+  { desc = 'Manage hooks' }
+)
 ```
+
+#### Manage hooks
+
+The `manage_hooks` function opens the cache directly on a floating window so
+that it can be modified by the user. Upon leaving the cache window, the changes
+to the cache (order of files, number of files) is captured by `fish-files`.
 
 ## Inspiration
 
@@ -105,4 +118,3 @@ This plugin is inspired by [harpoon](https://github.com/ThePrimeagen/harpoon/tre
 ## TODO
 
 - Remove snacks dependency
-- Make hooks manageable like a buffer

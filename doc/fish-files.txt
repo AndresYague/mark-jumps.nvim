@@ -10,6 +10,7 @@ Installation .................................. |fish-files.nvim-installation|
 Configuration ................................ |fish-files.nvim-configuration|
 Defalt options .............................. |fish-files.nvim-defalt-options|
 Example keymaps ............................ |fish-files.nvim-example-keymaps|
+Manage hooks .................................. |fish-files.nvim-manage-hooks|
 Inspiration .................................... |fish-files.nvim-inspiration|
 TODO .................................................. |fish-files.nvim-todo|
 
@@ -54,6 +55,8 @@ DEPENDENCIES                                    *fish-files.nvim-dependencies*
 - Neovim > 0.10.0 (probably)
 - Currently depends on snacks.picker <https://github.com/folke/snacks.nvim>
   for the picker
+- which-key <#https://github.com/folke/which-key.nvim> is not needed but it is
+  recommended.
 
 ------------------------------------------------------------------------------
 INSTALLATION                                    *fish-files.nvim-installation*
@@ -126,7 +129,22 @@ These example keymaps set-up the full api
       require('fish-files').choose_remove_hook,
       { desc = 'Choose file to unhook' }
     )
+    vim.keymap.set(
+      'n',
+      '<leader>jm',
+      require('fish-files').manage_hooks,
+      { desc = 'Manage hooks' }
+    )
 <
+
+                                                                              
+MANAGE HOOKS                                    *fish-files.nvim-manage-hooks*
+
+The `manage_hooks` function opens the cache directly on a floating window so
+that it can be modified by the user. Upon leaving the cache window, the
+changes to the cache (order of files, number of files) is captured by
+`fish-files`.
+
 
 ------------------------------------------------------------------------------
 INSPIRATION                                      *fish-files.nvim-inspiration*
@@ -141,6 +159,5 @@ TODO                                                    *fish-files.nvim-todo*
 
 
 - Remove snacks dependency
-- Make hooks manageable like a buffer
 
 vim:tw=78:ts=8:ft=help:norl:
