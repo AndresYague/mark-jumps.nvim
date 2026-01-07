@@ -228,10 +228,10 @@ M.setup = function(opts)
   -- Read the cache file to the filenames
   read_cache()
 
-  local fish_group = vim.api.nvim_create_augroup("Fish-files", {clear = true})
+  local fish_group = vim.api.nvim_create_augroup("Fish-files", { clear = true })
 
   -- When the cache is changed, read it
-  vim.api.nvim_create_autocmd("BufWinLeave", {
+  vim.api.nvim_create_autocmd({ "BufWinLeave" }, {
     pattern = cache_file,
     group = fish_group,
     callback = read_cache,

@@ -1,13 +1,14 @@
 M = {}
 
--- Relative size of the picker
--- to the editor window
-local relsize = 0.4
-
 ---Open cache in floating window
 ---@param filename string
+---@param relsize number?
 ---@return nil
-M.edit_cache = function(filename)
+M.edit_cache = function(filename, relsize)
+  -- Relative size of the picker
+  -- to the editor window
+  relsize = relsize or 0.4
+
   local bufnr = vim.api.nvim_create_buf(false, true)
 
   -- Open new window
