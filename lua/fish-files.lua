@@ -212,7 +212,8 @@ M.manage_hooks = function()
   local openable_cache = cache_file:gsub("%%", "%\\%%")
 
   -- Open the cache file to edit
-  edit_cache(openable_cache)
+  local bla = edit_cache(openable_cache)
+  vim.print(bla)
 
   -- The autocmd below makes sure we get the information after editing the
   -- cache
