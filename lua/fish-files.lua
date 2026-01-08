@@ -94,7 +94,7 @@ end
 ---Add a keymap for the filename
 ---@param filename string?
 ---@return nil
-M.add_hook = function(filename)
+local add_hook = function(filename)
   -- Normalize current filename
   filename = normalize_fname(filename)
 
@@ -113,7 +113,7 @@ end
 ---@param filename string?
 ---@param do_re_index boolean?
 ---@return nil
-M.remove_hook = function(filename, do_re_index)
+local remove_hook = function(filename, do_re_index)
   if do_re_index == nil then
     do_re_index = true
   end
@@ -152,7 +152,7 @@ local file_action = function(action, prompt)
       reel_file(filename)
     elseif action == "delete" then
       -- Remove filename
-      M.remove_hook(filename)
+      remove_hook(filename)
     end
   end)
 end
@@ -161,7 +161,7 @@ end
 ---@return nil
 M.unhook_all_files = function()
   for _, fname in ipairs(filename_list) do
-    M.remove_hook(fname, false)
+    remove_hook(fname, false)
   end
   re_index_keymaps()
 end
@@ -201,7 +201,7 @@ local read_cache = function()
   local file_read = io.open(cache_file, "r")
   if file_read then
     for line in file_read:lines() do
-      M.add_hook(line)
+      add_hook(line)
     end
   end
 end
@@ -245,5 +245,8 @@ M.setup = function(opts)
     once = true,
   })
 end
+
+M.add_hook = add_hook
+M.remove_hook = remove_hook
 
 return M
