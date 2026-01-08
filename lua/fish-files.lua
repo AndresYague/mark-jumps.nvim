@@ -1,6 +1,7 @@
 local Snacks = require("snacks")
 local edit_cache = require("utils").edit_cache
 local keymaps = 0
+local prefix
 
 ---@type string[]
 local filename_list = {}
@@ -70,7 +71,7 @@ local add_keymap = function(filename)
   -- Increment keymaps
   keymaps = keymaps + 1
   local index = keymaps
-  vim.keymap.set("n", M.opts.prefix .. index, function()
+  vim.keymap.set("n", prefix .. index, function()
     reel_file(filename)
   end, { desc = "Reel file: " .. shorten_filename(filename) })
 end
@@ -80,7 +81,7 @@ end
 local re_index_keymaps = function()
   -- Clean the keymaps
   for idx = 1, keymaps do
-    vim.api.nvim_del_keymap("n", M.opts.prefix .. idx)
+    vim.api.nvim_del_keymap("n", prefix .. idx)
   end
   keymaps = 0
 
@@ -222,8 +223,8 @@ end
 ---@param opts {prefix: string}?
 ---@return nil
 M.setup = function(opts)
-  M.opts = opts or {}
-  M.opts.prefix = M.opts.prefix or "<leader>"
+  opts = opts or {}
+  prefix = opts.prefix or "<leader>"
 
   -- Read the cache file to the filenames
   read_cache()
