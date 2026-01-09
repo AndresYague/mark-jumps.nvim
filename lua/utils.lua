@@ -3,6 +3,7 @@ M = {}
 -- Create a bufnr already for the cache picker
 local cache_bufnr = vim.api.nvim_create_buf(false, true)
 local pretty_table
+---@type string[]
 local pretty_lines
 
 -- What project are we on?
@@ -95,10 +96,12 @@ end
 
 ---Open cache in floating window, return picked file if it exists
 ---@param goto_file string[] -- Store the picked string
----@param relsize number? -- Relative size of the floating window to the editor window
+---@param min_relsize number? -- Relative size of the floating window to the editor window
+---@param max_relsize number? -- Relative size of the floating window to the editor window
 ---@return string?
-M.edit_cache = function(goto_file, relsize)
-  relsize = relsize or 0.3
+M.edit_cache = function(goto_file, min_relsize, max_relsize)
+  max_relsize = max_relsize or 0.5
+  min_relsize = min_relsize or 0.2
 
   -- Hook manager group
   local hook_group =
@@ -139,7 +142,8 @@ M.edit_cache = function(goto_file, relsize)
       -- Pick value
       vim.api.nvim_buf_set_keymap(cache_bufnr, "n", "<CR>", "", {
         callback = function()
-          goto_file[#goto_file+1] = pretty_table[vim.api.nvim_get_current_line()]
+          goto_file[#goto_file + 1] =
+            pretty_table[vim.api.nvim_get_current_line()]
           vim.cmd("q!")
         end,
       })
@@ -147,30 +151,45 @@ M.edit_cache = function(goto_file, relsize)
     once = true,
   })
 
-  -- Open new window
-  vim.api.nvim_open_win(cache_bufnr, true, {
-    relative = "editor",
-
-    -- Center window and give it the desired relative size to the editor
-    row = math.floor(vim.o.lines * (1 - relsize) * 0.5),
-    col = math.floor(vim.o.columns * (1 - relsize) * 0.5),
-    height = math.floor(vim.o.lines * relsize),
-    width = math.floor(vim.o.columns * relsize),
-    border = "rounded",
-    style = "minimal",
-  })
-
   -- Clear buffer
   vim.api.nvim_buf_set_lines(cache_bufnr, 0, -1, true, { "" })
 
+  -- Get window size
+
+  local max_cols = 0
   if get_pretty_table() then
     -- Write to buffer
     local str = {}
     for _, pretty in pairs(pretty_lines) do
       str[#str + 1] = pretty
+      max_cols = vim.fn.max({ max_cols, pretty:len() })
     end
     vim.api.nvim_buf_set_lines(cache_bufnr, 0, -1, true, str)
   end
+
+  local use_rows = math.max(
+    math.min(vim.o.lines * max_relsize, #pretty_lines),
+    vim.o.lines * min_relsize
+  )
+  local use_cols = math.max(
+    math.min(vim.o.columns * max_relsize, max_cols),
+    vim.o.columns * min_relsize
+  )
+
+  -- Open new window
+  vim.api.nvim_open_win(cache_bufnr, true, {
+    relative = "editor",
+
+    -- Center window and give it the desired relative size to the editor
+    row = math.floor((vim.o.lines - use_rows) * 0.5),
+    col = math.floor((vim.o.columns - use_cols) * 0.5),
+    height = math.floor(use_rows),
+    width = math.floor(use_cols),
+    border = "rounded",
+    style = "minimal",
+    title = "Hooked files",
+    title_pos = "center",
+  })
 end
 
 M.cache_file = cache_file
