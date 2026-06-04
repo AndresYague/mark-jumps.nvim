@@ -293,7 +293,7 @@ local edit_cache = function(min_relsize, max_relsize)
     })
 
     -- When the cache is changed, read it
-    vim.api.nvim_create_autocmd("BufWinLeave", {
+    vim.api.nvim_create_autocmd({ "BufLeave", "BufWinLeave" }, {
       buffer = cache_bufnr,
       group = vim.api.nvim_create_augroup(
         "fish-files-read-cache",
@@ -302,6 +302,7 @@ local edit_cache = function(min_relsize, max_relsize)
 
       -- We either changed the buffer or selected a file
       callback = function()
+        vim.cmd("q!")
         read_cache()
       end,
     })
@@ -376,7 +377,7 @@ M.setup = function(opts)
         -- Just send the keys to nvim, as if the user typed it
         if index then
           local keys =
-              vim.api.nvim_replace_termcodes(prefix .. index, true, false, true)
+            vim.api.nvim_replace_termcodes(prefix .. index, true, false, true)
           vim.api.nvim_feedkeys(keys, "t", false)
         end
       end
