@@ -31,7 +31,7 @@ local root = vim.fs.root(0, {
 -- Cache utility functions
 
 -- Create the cache directory
-local cache_dir = vim.fs.joinpath(vim.fn.stdpath("cache"), "fish-files")
+local cache_dir = vim.fs.joinpath(vim.fn.stdpath("data"), "fish-files")
 vim.fn.mkdir(cache_dir, "p")
 
 -- Get the filename for the cache
