@@ -285,8 +285,32 @@ local edit_cache = function(min_relsize, max_relsize)
         vim.api.nvim_buf_set_keymap(cache_bufnr, "n", "<CR>", "", {
           callback = function()
             goto_file = pretty_table[vim.api.nvim_get_current_line()]
+
+            -- Handle going to file
+            if goto_file then
+
+              -- Find the index of the chosen file
+              local index
+              for idx, file in ipairs(filename_list) do
+                if file == goto_file then
+                  goto_file = nil
+                  index = idx
+                  break
+                end
+              end
+
+              -- Just send the keys to nvim, as if the user typed it
+              if index then
+                local keys = vim.api.nvim_replace_termcodes(
+                  prefix .. index,
+                  true,
+                  false,
+                  true
+                )
+                vim.api.nvim_feedkeys(keys, "t", false)
+              end
+            end
             vim.cmd("q!")
-            vim.cmd("doautocmd User FishReelFile")
           end,
         })
       end,
@@ -357,32 +381,6 @@ M.setup = function(opts)
 
   -- Read the cache file to the filenames
   read_cache()
-
-  -- When we pick a file, go to it
-  vim.api.nvim_create_autocmd("User", {
-    group = fish_group,
-    pattern = "FishReelFile",
-
-    callback = function()
-      if goto_file then
-        local index
-        for idx, file in ipairs(filename_list) do
-          if file == goto_file then
-            goto_file = nil
-            index = idx
-            break
-          end
-        end
-
-        -- Just send the keys to nvim, as if the user typed it
-        if index then
-          local keys =
-            vim.api.nvim_replace_termcodes(prefix .. index, true, false, true)
-          vim.api.nvim_feedkeys(keys, "t", false)
-        end
-      end
-    end,
-  })
 
   -- Save the filenames to the cache file when leaving nvim
   vim.api.nvim_create_autocmd({ "VimLeave" }, {
